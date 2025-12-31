@@ -17,5 +17,6 @@ It demonstrates web development using Python, Flask, SQL, Bootstrap, and REST-st
 🛠 Tech Stack
 Component	Technology
 Backend	Python, Flask
+
 Frontend	HTML, CSS, Javascript
 Database	Mysql
