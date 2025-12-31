@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineBase - Indian Movie Database (Functional)</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            color: #e0e0e0; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #0d0d0d; 
+            background-size: cover; 
+            background-attachment: fixed; 
+            position: relative; 
+        }
+        body::before { 
+            content: ''; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            background-color: rgba(0, 0, 0, 0.75); 
+            z-index: -1; 
+        }
+
+        .header { background-color: rgba(26, 26, 26, 0.9); padding: 20px 0; text-align: center; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); }
+        .logo { color: #f5c518; font-size: 2.5em; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
+
+        .container { max-width: 1100px; margin: 30px auto; padding: 30px; background: rgba(31, 31, 31, 0.95); border-radius: 12px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7); }
+        h2 { border-left: 6px solid #f5c518; padding-left: 15px; color: #e0e0e0; margin-top: 40px; margin-bottom: 30px; font-size: 1.8em; font-weight: 600; }
+
+        .search-form { display: flex; justify-content: center; align-items: center; margin-bottom: 30px; gap: 10px; }
+        #searchInput { flex-grow: 1; max-width: 600px; padding: 12px; border: none; border-radius: 6px; background-color: #333333; color: #ffffff; font-size: 1em; }
+        #searchButton, #addButton, #analyzeButton {
+            padding: 12px 25px; 
+            background-color: #f5c518; 
+            color: #000; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            font-size: 1em; 
+            transition: background-color 0.2s, transform 0.1s; 
+        }
+        #searchButton:hover, #addButton:hover, #analyzeButton:hover { background-color: #e0b416; transform: translateY(-1px); }
+
+        #resultsContainer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 10px 0;
+}
+
+.movie-item {
+    flex: 0 0 calc(33.333% - 13.333px);
+    box-sizing: border-box;
+    background: #2a2a2a;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    border-left: 4px solid #f5c518;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    min-height: 200px;
+}
+
+        .movie-details { flex-grow: 1; padding: 0; }
+        .movie-header-block { padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid #3a3a3a; }
+        .primary-title { color: #ffffff; font-size: 1.1em; font-weight: 700; margin-bottom: 5px; line-height: 1.3; }
+        .secondary-info { font-size: 0.9em; color: #aaaaaa; }
+        .movie-rating-val { color: #f5c518; font-weight: bold; font-size: 1.5em; }
+        
+        .movie-actions { display: flex; justify-content: space-between; gap: 8px; margin-top: auto; padding-top: 10px; }
+        .movie-actions button { flex-grow: 1; padding: 8px; background-color: #f5c518; color: #000; border: none; border-radius: 4px; font-weight: bold; font-size: 0.9em; }
+
+        .full-details-dropdown { background: #212121; color: #ccc; padding: 15px; font-size: 0.85em; border-top: 1px solid #3a3a3a; display: none; }
+        .full-details-dropdown strong { color: #f5c518; font-weight: 600; }
+        .collab-input-group input { max-width: 200px; padding: 10px; background-color: #333; color: #fff; border: 1px solid #555; border-radius: 4px; }
+        .collab-input-group { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; justify-content: center; }
+        #collaborationResults { margin-top: 20px; padding: 15px; border: 1px solid #f5c518; border-radius: 6px; display: none; }
+        #collabMovieList { list-style: disc; margin-left: 20px; padding-left: 0; }
+        #noResults { display: none; color: #f5c518; text-align: center; font-size: 1.5em; margin: 50px 0; width: 100%; }
+
+        @media (max-width: 1050px) {
+            .movie-item { flex: 0 0 calc(50% - 10px); }
+        }
+        @media (max-width: 700px) {
+            .movie-item { flex: 0 0 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">CINEBASE</div>
+    </div>
+
+    <div class="container">
+        <div class="search-form">
+            <input type="text" id="searchInput" placeholder="Search movies by title or plot...">
+            <button id="searchButton" onclick="filterMovies()">Search</button>
+            <button id="addButton" onclick="addMovie()">Add New Movie</button>
+        </div>
+        
+        <section class="collaboration-search-section">
+            <h2>🤝 Collaboration Analyzer</h2>
+            <div id="collaborationForm" class="collab-input-group">
+                <input type="text" id="personNamesInput" placeholder="Names (e.g., SRK, Deepika)" />
+                <input type="number" id="startYearInput" placeholder="Start Year (e.g., 2010)" />
+                <input type="number" id="endYearInput" placeholder="End Year (e.g., 2024)" />
+                <button id="analyzeButton" onclick="analyzeCollaboration()">Analyze Films</button>
+            </div>
+            
+            <div id="collaborationResults" style="display: none;">
+                <h3>Analysis Results: <span id="collabNames"></span></h3>
+                <p>Total Movies Found: <strong id="movieCount">0</strong></p>
+                <ul id="collabMovieList"></ul>
+            </div>
+        </section>
+        
+        <h2 id="pageTitle">All Movies</h2>
+
+        <div id="resultsContainer"></div>
+        <p id="noResults">No movies found in the database.</p>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api/movies'; 
+        const COLLAB_API_URL = 'http://localhost:3000/api/filmography_search';
+        const resultsContainer = document.getElementById('resultsContainer');
+        const searchInput = document.getElementById('searchInput');
+        const pageTitle = document.getElementById('pageTitle');
+        const noResults = document.getElementById('noResults');
+
+        function formatCurrency(value) {
+            if (value === null || value === undefined || value === 0) return 'N/A';
+            return `₹${parseFloat(value).toFixed(2)} crore`;
+        }
+        function parsePromptNumber(value) {
+            if (value === null || value.trim() === "") return null;
+            let num = parseFloat(value);
+            return isNaN(num) ? null : num;
+        }
+
+        const checkCancel = (value) => {
+            if (value === null) {
+                return confirm("Are you sure you want to cancel the operation? All progress will be lost.");
+            }
+            return false;
+        };
+
+        function toggleDetails(id, button) {
+            const dropdown = document.getElementById(`details-dropdown-${id}`);
+            
+            if (!dropdown) {
+                console.error("Dropdown not found for ID:", id);
+                return;
+            }
+
+            dropdown.style.display = dropdown.style.display === 'none' || dropdown.style.display === '' ? 'block' : 'none';
+            
+            if (dropdown.style.display === 'block') {
+                button.textContent = 'Hide Details';
+            } else {
+                button.textContent = 'View Details';
+            }
+        }
+
+        async function fetchAndRenderMovies(query = '') {
+            resultsContainer.innerHTML = '<p class="loading-message" style="text-align: center;">Loading movies from database...</p>';
+            
+            try {
+                const res = await fetch(`${API_URL}?q=${encodeURIComponent(query)}`);
+                if (!res.ok) throw new Error(`HTTP Error! Status: ${res.status}. Check Node console.`);
+                const movies = await res.json();
+                
+                resultsContainer.innerHTML = '';
+                pageTitle.textContent = query ? `Search Results for: "${query}" (${movies.length})` : "All Movies";
+                
+                if (movies.length === 0) { noResults.style.display = 'block'; return; }
+                noResults.style.display = 'none';
+                
+                movies.forEach((movie) => {
+                    const item = document.createElement('div');
+                    item.className = 'movie-item';
+                    item.setAttribute('data-id', movie.id);
+
+                    item.innerHTML = `
+                        <div class="movie-details">
+                            <div class="movie-header-block">
+                                <div class="primary-title">${movie.title} (${movie.year})</div>
+                                <div class="secondary-info">Industry: ${movie.industry || 'N/A'} | Duration: ${movie.duration || 'N/A'} min</div>
+                            </div>
+                            
+                            <div class="movie-info-bar">
+                                <div class="movie-rating-val">Rating: ${movie.rating || 'N/A'}</div>
+                            </div>
+                            
+                            <div class="movie-actions">
+                                <button onclick="toggleDetails(${movie.id}, this)">View Details</button>
+                            </div>
+                        </div>
+                        
+                        <div class="full-details-dropdown" id="details-dropdown-${movie.id}" style="display: none;">
+                            <div class="full-details-content">
+                                <p style="font-weight: 700; color: #fff;"><strong>Plot:</strong> ${movie.plot || 'N/A'}</p>
+                                <p><strong>Genres:</strong> ${movie.genres || 'N/A'}</p>
+                                <p><strong>Cast & Crew:</strong> ${movie.cast_crew || 'N/A'}</p>
+                                <p><strong>Awards:</strong> ${movie.awards || 'N/A'}</p>
+                                <p><strong>Budget:</strong> ${formatCurrency(movie.budget)}</p>
+                                <p><strong>Box Office:</strong> ${formatCurrency(movie.revenue)}</p>
+                            </div>
+                            <div class="dropdown-actions">
+                                <button onclick="editMovie(${movie.id})">Update</button>
+                                <button onclick="deleteMovie(${movie.id})">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                    resultsContainer.appendChild(item);
+                });
+
+            } catch (error) {
+                resultsContainer.innerHTML = `<p style="color: red; text-align: center;">❌ FAILED TO LOAD DATA. Ensure Flask server is running on port 3000. Error: ${error.message}</p>`;
+                console.error("Fetch Error:", error);
+            }
+        }
+
+        function addMovie() {
+            let title = prompt("1. Movie Title:");
+            if (checkCancel(title)) return;
+            
+            let year_input = prompt("2. Release Year:");
+            if (checkCancel(year_input)) return;
+            const year = parseInt(year_input, 10);
+            
+            let duration = parsePromptNumber(prompt("3. Duration (min):"));
+            let rating = parsePromptNumber(prompt("4. IMDB Rating (e.g., 7.5):"));
+            let plot = prompt("5. Plot Summary:");
+
+            let industry_input = prompt("6. Industry ID (1-5):"); 
+            if (checkCancel(industry_input)) return;
+            const industry_id = parseInt(industry_input, 10);
+
+            let budget = parsePromptNumber(prompt("7. Budget (Cr):"));
+            let revenue = parsePromptNumber(prompt("8. Revenue (Cr):"));
+            
+            let genres = prompt("9. Genres (comma-separated):");
+            if (checkCancel(genres)) return;
+
+            let cast = prompt("10. Cast & Crew (format: Name:Role,Name:Role):"); 
+            if (checkCancel(cast)) return;
+
+            let awards = prompt("11. Awards (comma-separated):");
+            if (checkCancel(awards)) return;
+            
+            if (!title || isNaN(year) || isNaN(industry_id) || industry_id < 1 || industry_id > 5) {
+                alert("Creation failed: Title, Year, and valid Industry ID (1-5) are required.");
+                return;
+            }
+
+            const payload = { title, year, duration, rating, plot, industry: industry_id, budget, revenue, genres, cast, awards };
+
+            fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ Movie added to database!');
+                    fetchAndRenderMovies(); 
+                } else {
+                    alert('❌ Error adding movie: ' + (data.error || res.statusText));
+                }
+            })
+            .catch(error => {
+                console.error('Add Movie Network Error:', error);
+                alert('Network error during ADD operation. Is the server running?');
+            });
+        }
+
+        function deleteMovie(id) {
+            if (!confirm(`Are you sure you want to delete Movie ID ${id}?`)) return;
+            
+            fetch(`${API_URL}/${id}`, { method: 'DELETE' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`✅ Movie ID ${id} deleted successfully.`);
+                    fetchAndRenderMovies(); 
+                } else {
+                    alert('❌ Failed to delete movie: ' + data.error);
+                }
+            })
+            .catch(error => console.error('Delete Network Error:', error));
+        }
+
+        async function editMovie(id) {
+            const currentMovie = await getMovieDataById(id);
+            if (!currentMovie) {
+                alert(`Error: Could not retrieve current data for Movie ID ${id}.`);
+                return;
+            }
+            
+            alert(`Editing Movie ID: ${id}. Current title: ${currentMovie.title}.`);
+            
+            const newTitle = prompt("1. Edit Title:", currentMovie.title);
+            if (checkCancel(newTitle)) return;
+            
+            const newRating = parsePromptNumber(prompt("2. Edit Rating:", currentMovie.rating));
+            if (checkCancel(newRating)) return;
+            
+            const newBudget = parsePromptNumber(prompt("3. Edit Budget (Cr):", currentMovie.budget));
+            if (checkCancel(newBudget)) return;
+
+            const newRevenue = parsePromptNumber(prompt("4. Edit Box Office (Cr):", currentMovie.revenue));
+            if (checkCancel(newRevenue)) return;
+            
+            const payload = {
+                title: newTitle,
+                rating: newRating,
+                budget: newBudget,
+                revenue: newRevenue
+            };
+            
+            fetch(`${API_URL}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`✅ Movie ID ${id} updated successfully!`);
+                    fetchAndRenderMovies(''); 
+                } else {
+                    alert(`❌ Failed to update movie: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                console.error('Update Network Error:', error);
+                alert('Network error during UPDATE operation.');
+            });
+        }
+
+        async function getMovieDataById(id) {
+            try {
+                const res = await fetch(`${API_URL}`);
+                const allMovies = await res.json();
+                return allMovies.find(m => m.id == id);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        async function analyzeCollaboration() {
+            const names = document.getElementById('personNamesInput').value;
+            const startYear = document.getElementById('startYearInput').value;
+            const endYear = document.getElementById('endYearInput').value;
+            const resultsDiv = document.getElementById('collaborationResults');
+            const movieList = document.getElementById('collabMovieList');
+
+            resultsDiv.style.display = 'block';
+            movieList.innerHTML = '<li style="color:#f5c518;">Searching...</li>';
+            
+            if (!names || !startYear || !endYear) {
+                movieList.innerHTML = '<li>Please enter all required fields.</li>';
+                return;
+            }
+
+            try {
+                const url = `${COLLAB_API_URL}?names=${encodeURIComponent(names)}&start_year=${startYear}&end_year=${endYear}`;
+                const res = await fetch(url);
+                
+                if (!res.ok) {
+                    const err = await res.json();
+                    alert("Analysis Failed: " + err.error);
+                    movieList.innerHTML = `<li style="color:red;">Error: ${err.error}</li>`;
+                    return;
+                }
+
+                const data = await res.json();
+
+                document.getElementById('collabNames').textContent = names;
+                document.getElementById('movieCount').textContent = data.count;
+                
+                movieList.innerHTML = '';
+                if (data.count === 0) {
+                    movieList.innerHTML = '<li>No collaborations found in this period.</li>';
+                } else {
+                    data.movies.forEach(movie => {
+                        const li = document.createElement('li');
+                        li.textContent = `${movie.title} (${movie.year}) [Industry: ${movie.industries}]`;
+                        movieList.appendChild(li);
+                    });
+                }
+
+            } catch (error) {
+                console.error('Collaboration API Error:', error);
+                alert('A network or server configuration error occurred during analysis.');
+                movieList.innerHTML = `<li style="color:red;">Network or Server Error.</li>`;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchAndRenderMovies(''); 
+            
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                filterMovies(e.target.value);
+            });
+            document.getElementById('searchButton').addEventListener('click', () => filterMovies(searchInput.value));
+            document.getElementById('analyzeButton').addEventListener('click', analyzeCollaboration); 
+        });
+        
+        function filterMovies(query) {
+             fetchAndRenderMovies(query);
+        }
+    </script>
+</body>
+</html>
