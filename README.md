@@ -8,15 +8,22 @@ It demonstrates web development using Python, Flask, SQL, Bootstrap, and REST-st
 🎯 Key Features
 
 🔍 Search movies by name, actor, or director
+
 🎬 View detailed movie information
+
 🧑‍🤝‍🧑 User authentication – login & signup
+
 ⭐ Submit movie reviews and view feedback from other users
+
 📊 Normalized database structure using multiple relational tables
+
 (movies, actors, directors, users, reviews, movie_actor_relations)
 
 🛠 Tech Stack
 Component	Technology
+
 Backend	Python, Flask
 
 Frontend	HTML, CSS, Javascript
+
 Database	Mysql
